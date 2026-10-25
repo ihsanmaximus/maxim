@@ -166,7 +166,7 @@ export default function HeroConfigurator({
       <div
         className={`relative z-10 w-full ${
           isBackground
-            ? "max-w-[45%]"
+            ? "max-w-full md:max-w-[40%]"
             : "max-w-2xl"
         } ${
           config.alignment === "center"
@@ -254,18 +254,18 @@ export default function HeroConfigurator({
               {config.gradientEnabled && (
                 <div
                   aria-hidden="true"
-                  className={`pointer-events-none absolute inset-y-0 w-[45%] ${
+                  className={`pointer-events-none absolute inset-0 md:inset-y-0 md:w-[45%] ${
                     config.gradientPosition === "left" ? "left-0" : "right-0"
                   }`}
                   style={{
                     background:
                       config.gradientTheme === "dark"
                         ? config.gradientPosition === "left"
-                          ? "linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0) 100%)"
-                          : "linear-gradient(to left, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0) 100%)"
+                          ? "linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.48) 45%, rgba(0,0,0,0.18) 75%, rgba(0,0,0,0) 100%)"
+                          : "linear-gradient(to left, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.48) 45%, rgba(0,0,0,0.18) 75%, rgba(0,0,0,0) 100%)"
                         : config.gradientPosition === "left"
-                          ? "linear-gradient(to right, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 30%, rgba(255,255,255,0.65) 40%, rgba(255,255,255,0) 100%)"
-                          : "linear-gradient(to left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 30%, rgba(255,255,255,0.65) 40%, rgba(255,255,255,0) 100%)",
+                          ? "linear-gradient(to right, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.48) 45%, rgba(255,255,255,0.18) 75%, rgba(255,255,255,0) 100%)"
+                          : "linear-gradient(to left, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.48) 45%, rgba(255,255,255,0.18) 75%, rgba(255,255,255,0) 100%)",
                   }}
                 />
               )}
@@ -370,6 +370,9 @@ export default function HeroConfigurator({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">01 · Konten Hero<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div>
             <label className={labelClass} htmlFor="hero-eyebrow">
               Eyebrow (opsional)
@@ -409,6 +412,11 @@ export default function HeroConfigurator({
             />
           </div>
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">02 · Layout & Gambar<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div>
             <label className={labelClass} htmlFor="hero-layout">
               Layout
@@ -508,6 +516,11 @@ export default function HeroConfigurator({
             </>
           )}
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">03 · Gradasi Hero<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           {config.layout === "background-image" && (
             <div className="space-y-4 rounded-xl border border-slate-200 p-4">
               <h3 className="font-semibold text-slate-900">
@@ -577,6 +590,11 @@ export default function HeroConfigurator({
             </div>
           )}
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">04 · Alignment & Tinggi<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div>
             <label className={labelClass} htmlFor="hero-alignment">
               Perataan teks
@@ -613,6 +631,11 @@ export default function HeroConfigurator({
             </select>
           </div>
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">05 · CTA<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div className="space-y-4 rounded-xl bg-slate-50 p-4">
             <h3 className="font-semibold text-slate-900">CTA utama</h3>
 
@@ -689,6 +712,11 @@ export default function HeroConfigurator({
             )}
           </div>
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">06 · Warna Tipografi<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
             <div>
               <h3 className="font-semibold text-slate-900">
@@ -741,6 +769,11 @@ export default function HeroConfigurator({
             </div>
           </div>
 
+            </div>
+          </details>
+          <details open className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">07 · Warna Hero<span className="float-right text-xs font-normal text-slate-400">Buka/tutup</span></summary>
+            <div className="mt-4 space-y-5">
           <div className="space-y-4 rounded-xl border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-900">Warna Hero</h3>
 
@@ -780,6 +813,8 @@ export default function HeroConfigurator({
               </label>
             </div>
           </div>
+            </div>
+          </details>
         </section>
 
         <section className="min-w-0 space-y-3">

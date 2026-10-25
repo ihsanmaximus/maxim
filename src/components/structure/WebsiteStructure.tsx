@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getProjectData, saveProjectData } from "@/lib/projects/projectStorage";
 import {
   DndContext,
   PointerSensor,
@@ -25,6 +26,7 @@ type Section = {
   name: string;
   enabled: boolean;
   global?: boolean;
+  imageId?: string;
 };
 
 const defaultSections: Section[] = [
@@ -52,6 +54,7 @@ type WebsitePage = {
 };
 
 type Props = {
+  projectId?: string;
   projectName?: string;
   onContinue: () => void;
 };
@@ -216,6 +219,7 @@ function SortableRow({
 }
 
 export default function WebsiteStructure({
+  projectId,
   projectName = "Your Website",
   onContinue,
 }: Props) {
@@ -226,9 +230,12 @@ export default function WebsiteStructure({
       type: "content",
       sections: defaultSections.map((section) => ({ ...section })),
       integrations: [],
-      structureOrder: defaultSections.map((section) => `section:${section.id}`),
+      structureOrder: defaultSections.map(
+        (section) => `section:${section.id}`,
+      ),
     },
   ]);
+
   const [activePageId, setActivePageId] = useState("home");
   const [activeTab, setActiveTab] = useState<"section" | "integration">("section");
   const [showAddPage, setShowAddPage] = useState(false);
@@ -237,7 +244,75 @@ export default function WebsiteStructure({
   const [notice, setNotice] = useState("");
   const [noticeType, setNoticeType] = useState<"success" | "error">("success");
   const [noticeVisible, setNoticeVisible] = useState(false);
+
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [loadedProjectId, setLoadedProjectId] = useState<string | null>(null);
+
+  // LOAD: muat data proyek sebelum mengizinkan penyimpanan.
+  useEffect(() => {
+    if (!projectId) {
+      setLoadedProjectId(null);
+      return;
+    }
+
+    const defaultPages: WebsitePage[] = [
+      {
+        id: "home",
+        name: "Home",
+        type: "content",
+        sections: defaultSections.map((section) => ({ ...section })),
+        integrations: [],
+        structureOrder: defaultSections.map(
+          (section) => `section:${section.id}`,
+        ),
+      },
+    ];
+
+    const savedPages = getProjectData<WebsitePage[]>(
+      projectId,
+      "website-structure",
+      defaultPages,
+    );
+
+    const validPages =
+      Array.isArray(savedPages) && savedPages.length > 0
+        ? savedPages
+        : defaultPages;
+
+    const savedActivePageId = getProjectData<string>(
+      projectId,
+      "website-structure-active-page",
+      "home",
+    );
+
+    setPages(validPages);
+
+    setActivePageId(
+      validPages.some((page) => page.id === savedActivePageId)
+        ? savedActivePageId
+        : validPages[0].id,
+    );
+
+    setLoadedProjectId(projectId);
+  }, [projectId]);
+
+  // SAVE: simpan hanya setelah data proyek selesai dimuat.
+  useEffect(() => {
+    if (!projectId || loadedProjectId !== projectId) return;
+
+    saveProjectData(projectId, "website-structure", pages);
+    saveProjectData(
+      projectId,
+      "website-structure-active-page",
+      activePageId,
+    );
+  }, [projectId, loadedProjectId, pages, activePageId]);
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    };
+  }, []);
 
   const noticeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 

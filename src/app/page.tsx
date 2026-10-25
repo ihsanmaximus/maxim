@@ -1,26 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Dashboard from "@/components/dashboard/Dashboard";
+import ProjectsPage from "@/components/projects/ProjectsPage";
 import WebsiteStructure from "@/components/structure/WebsiteStructure";
+import ImageLibrary from "@/components/images/ImageLibrary";
+import NavbarConfigurator from "@/components/configuration/NavbarConfigurator";
+import HeroConfigurator from "@/components/configuration/HeroConfigurator";
+import ConfigurationHome from "@/components/configuration/ConfigurationHome";
+import ServicesConfigurator from "@/components/configuration/ServicesConfigurator";
+import PortfolioConfigurator from "@/components/configuration/PortfolioConfigurator";
+import FAQConfigurator from "@/components/configuration/FAQConfigurator";
+import TestimonialsConfigurator from "@/components/configuration/TestimonialsConfigurator";
+import AboutMeConfigurator from "@/components/configuration/AboutMeConfigurator";
 import ProjectSetup, {
   type ProjectFormData,
 } from "@/components/project/ProjectSetup";
+import {
+  createProject,
+  getProject,
+  getActiveProjectId,
+  setActiveProjectId,
+  type StoredProject,
+} from "@/lib/projects/projectStorage";
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [formData, setFormData] = useState<ProjectFormData | null>(null);
+  const [formData, setFormData] = useState<StoredProject | null>(null);
+  const [ready, setReady] = useState(false);
+  const [activeConfigurationSection, setActiveConfigurationSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    const activeId = getActiveProjectId();
+    if (activeId) {
+      const project = getProject(activeId);
+      if (project) setFormData(project);
+    }
+
+    const savedSection = localStorage.getItem("maximus-active-section");
+    const allowedSections = [
+      "Dashboard",
+      "Projects",
+      "Project Setup",
+      "Project Details",
+      "Website Structure",
+      "Configuration", "Navbar", "Hero", "Services",
+      "Image Library",
+    ];
+
+    if (savedSection && allowedSections.includes(savedSection)) {
+      setActiveSection(savedSection);
+    }
+
+    setReady(true);
+  }, []);
 
   function navigate(section: string) {
     setActiveSection(section);
     setSidebarOpen(false);
+    if (section === "Configuration") setActiveConfigurationSection(null);
+    localStorage.setItem("maximus-active-section", section);
   }
 
   function handleProjectSubmit(data: ProjectFormData) {
-    setFormData(data);
-    setActiveSection("Website Structure");
+    try {
+      const project = createProject(data);
+      setFormData(project);
+      setActiveProjectId(project.id);
+      navigate("Website Structure");
+    } catch (error) {
+      console.error("Failed to save project:", error);
+      window.alert("Project could not be saved. Please try again.");
+    }
   }
 
   return (
@@ -54,10 +107,26 @@ export default function Home() {
         </header>
 
         <div className="mx-auto max-w-[1450px] p-4 sm:p-8 lg:p-10">
-          {activeSection === "Dashboard" && (
+          {ready && activeSection === "Projects" && (
+            <ProjectsPage
+              onCreateProject={() => navigate("Project Setup")}
+              onOpenProject={(project) => {
+                setFormData(project);
+                setActiveProjectId(project.id);
+                navigate("Website Structure");
+              }}
+            />
+          )}
+
+          {ready && activeSection === "Dashboard" && (
             <Dashboard
               onCreateProject={() => navigate("Project Setup")}
               onViewProjects={() => navigate("Projects")}
+              onOpenProject={(project) => {
+                setFormData(project);
+                setActiveProjectId(project.id);
+                navigate("Website Structure");
+              }}
             />
           )}
 
@@ -70,9 +139,231 @@ export default function Home() {
 
           {activeSection === "Website Structure" && (
             <WebsiteStructure
+              key={formData?.id || "test-workspace"}
+              projectId={formData?.id}
               projectName={formData?.projectName || "New Project"}
               onContinue={() => navigate("Configuration")}
             />
+          )}
+
+          {ready && activeSection === "Configuration" && formData && (
+            activeConfigurationSection === null ? (
+              <ConfigurationHome
+                sections={(() => {
+                  const saved = localStorage.getItem(
+                    `maximus-project:${formData.id}:website-structure`
+                  );
+                  if (!saved) return [];
+                  try {
+                    const parsed = JSON.parse(saved);
+                    const pages = Array.isArray(parsed) ? parsed : [];
+                    const activePage = pages.find(
+                      (page: { id?: string; active?: boolean }) => page.active
+                    ) ?? pages[0];
+                    if (!activePage) return [];
+                    const ids: string[] = Array.isArray(activePage.structureOrder)
+                      ? activePage.structureOrder
+                      : [];
+                    return ids
+                      .filter((id) => id.startsWith("section:"))
+                      .map((id) => {
+                        const sectionId = id.slice("section:".length);
+                        const section = (activePage.sections ?? []).find(
+                          (item: { id?: string; name?: string; description?: string; enabled?: boolean }) =>
+                            item.id === sectionId
+                        );
+                        if (!section || section.enabled === false) return null;
+                        return {
+                          id: section.id ?? sectionId,
+                          name: section.name ?? sectionId,
+                          description: section.description ?? "",
+                        };
+                      })
+                      .filter(Boolean) as {
+                        id: string;
+                        name: string;
+                        description: string;
+                      }[];
+                  } catch {
+                    return [];
+                  }
+                })()}
+                onOpenSection={(sectionId) => setActiveConfigurationSection(sectionId)}
+              />
+
+            ) : activeConfigurationSection.toLowerCase().includes("navbar") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <NavbarConfigurator
+                  key={`navbar-${formData.id}`}
+                  projectId={formData.id}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("hero") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <HeroConfigurator
+                  key={`hero-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("services") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <ServicesConfigurator
+                  key={`services-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("portfolio") || activeConfigurationSection.toLowerCase().includes("gallery") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <PortfolioConfigurator
+                  key={`portfolio-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : (activeConfigurationSection.toLowerCase().includes("about me") || activeConfigurationSection.toLowerCase() === "about") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <AboutMeConfigurator
+                  key={`about-me-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("testimonial") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <TestimonialsConfigurator
+                  key={`testimonials-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("faq") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <FAQConfigurator
+                  key={`faq-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
+                />
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="mb-4 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {activeConfigurationSection}
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Editor section ini akan dihubungkan pada tahap berikutnya.
+                </p>
+              </div>
+            )
+          )}
+
+          {ready && activeSection === "Configuration" && !formData && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h2 className="text-lg font-bold text-slate-900">
+                Select a project first
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Open an existing project from Dashboard or create a new one
+                before configuring its website.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("Dashboard")}
+                className="mt-4 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-bold text-white"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          )}
+
+          {ready && activeSection === "Image Library" && (
+            <ImageLibrary
+              key={formData?.id || "no-project"}
+              projectId={formData?.id}
+              projectName={formData?.projectName || "New Project"}
+            />
+          )}
+
+          {ready && activeSection === "Configuration" && !formData && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h2 className="text-lg font-bold text-slate-900">
+                Select a project first
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Open an existing project from Dashboard or create a new one
+                before configuring its website.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("Dashboard")}
+                className="mt-4 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-bold text-white"
+              >
+                Back to Dashboard
+              </button>
+            </div>
           )}
 
           {activeSection === "Project Details" && formData && (
@@ -105,10 +396,9 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="mt-6 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                The form works, but project saving has not been implemented
-                yet. The submitted information currently remains in memory
-                while this page is open.
+              <p className="mt-6 rounded-xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-800">
+                Project information is saved in this browser and can be
+                reopened from the Dashboard.
               </p>
 
               <button

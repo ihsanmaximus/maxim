@@ -20,6 +20,7 @@ const menuGroups = [
       { name: "Project Setup", icon: "01", step: 1 },
       { name: "Website Structure", icon: "02", step: 2 },
       { name: "Configuration", icon: "03", step: 3 },
+      { name: "Hero", icon: "03", step: 3 },
       { name: "Preview", icon: "04", step: 4 },
       { name: "Export", icon: "05", step: 5 },
     ],
