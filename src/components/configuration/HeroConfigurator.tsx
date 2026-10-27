@@ -33,6 +33,7 @@ type HeroConfig = {
   secondaryCtaLabel: string;
   secondaryCtaTarget: string;
   imageUrl: string;
+  imageId?: string;
   imageAlt: string;
   imagePosition: HeroImagePosition;
   alignment: HeroAlignment;
@@ -71,6 +72,7 @@ const createDefaultConfig = (
   secondaryCtaLabel: "Pelajari Lebih Lanjut",
   secondaryCtaTarget: "#about",
   imageUrl: "",
+  imageId: "",
   imageAlt: "Gambar utama website",
   imagePosition: "right",
   alignment: "left",
@@ -94,6 +96,7 @@ export default function HeroConfigurator({
   const [loaded, setLoaded] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [libraryImages, setLibraryImages] = useState<StoredImage[]>([]);
+  const [resolvedImageUrl, setResolvedImageUrl] = useState("");
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [libraryLoading, setLibraryLoading] = useState(false);
 
@@ -105,8 +108,30 @@ export default function HeroConfigurator({
       null,
     );
 
-    setConfig(saved ? { ...fallback, ...saved } : fallback);
+    const initial = saved ? { ...fallback, ...saved } : fallback;
+    setConfig(initial);
+    setResolvedImageUrl(initial.imageUrl || "");
     setLoaded(true);
+
+    let cancelled = false;
+    getProjectImages(projectId).then((images) => {
+      if (cancelled) return;
+      setLibraryImages(images);
+      const matched = initial.imageId
+        ? images.find((image) => image.id === initial.imageId)
+        : initial.imageUrl.startsWith("data:")
+          ? images.find((image) => image.dataUrl === initial.imageUrl)
+          : undefined;
+      if (matched) {
+        setResolvedImageUrl(matched.dataUrl);
+        if (!initial.imageId) {
+          setConfig((current) => ({ ...current, imageId: matched.id, imageUrl: "" }));
+        }
+      }
+    }).catch((error) => {
+      console.error("Gagal memuat gambar Hero dari Image Library:", error);
+    });
+    return () => { cancelled = true; };
   }, [projectId, primaryColor, secondaryColor]);
 
   useEffect(() => {
@@ -119,7 +144,12 @@ export default function HeroConfigurator({
     key: K,
     value: HeroConfig[K],
   ) {
-    setConfig((current) => ({ ...current, [key]: value }));
+    setConfig((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "imageUrl" ? { imageId: "" } : {}),
+    }));
+    if (key === "imageUrl") setResolvedImageUrl(String(value ?? ""));
   }
 
   async function openImagePicker() {
@@ -146,7 +176,7 @@ export default function HeroConfigurator({
     const isTextOnly = config.layout === "text-only";
     const isBackground = config.layout === "background-image";
     const isSplit = config.layout === "split-full-bleed";
-    const hasImage = Boolean(config.imageUrl);
+    const hasImage = Boolean(resolvedImageUrl || config.imageUrl);
 
     const heroHeight =
       config.height === "compact"
@@ -247,7 +277,7 @@ export default function HeroConfigurator({
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={config.imageUrl}
+                src={resolvedImageUrl || config.imageUrl}
                 alt={config.imageAlt}
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -307,7 +337,7 @@ export default function HeroConfigurator({
             {hasImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={config.imageUrl}
+                src={resolvedImageUrl || config.imageUrl}
                 alt={config.imageAlt}
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -338,7 +368,7 @@ export default function HeroConfigurator({
               {hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={config.imageUrl}
+                  src={resolvedImageUrl || config.imageUrl}
                   alt={config.imageAlt}
                   className="h-auto max-h-[520px] w-full object-cover"
                 />
@@ -444,13 +474,13 @@ export default function HeroConfigurator({
                 {config.imageUrl && (
                   <div className="rounded-xl border border-slate-200 p-3">
                     <img
-                      src={config.imageUrl}
+                      src={resolvedImageUrl || config.imageUrl}
                       alt={config.imageAlt}
                       className="max-h-48 w-full rounded-lg object-contain"
                     />
                     <button
                       type="button"
-                      onClick={() => update("imageUrl", "")}
+                      onClick={() => { update("imageUrl", ""); update("imageId", ""); setResolvedImageUrl(""); }}
                       className="mt-2 text-sm font-semibold text-red-600"
                     >
                       Hapus gambar
@@ -897,7 +927,8 @@ export default function HeroConfigurator({
                     key={image.id}
                     type="button"
                     onClick={() => {
-                      update("imageUrl", image.dataUrl);
+                      setConfig((current) => ({ ...current, imageId: image.id, imageUrl: "" }));
+                      setResolvedImageUrl(image.dataUrl);
                       setImagePickerOpen(false);
                     }}
                     className="overflow-hidden rounded-xl border border-slate-200 text-left transition hover:border-emerald-600 hover:ring-2 hover:ring-emerald-100"

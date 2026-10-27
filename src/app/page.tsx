@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
+import SettingsPage from "@/components/settings/SettingsPage";
 import Dashboard from "@/components/dashboard/Dashboard";
 import ProjectsPage from "@/components/projects/ProjectsPage";
 import WebsiteStructure from "@/components/structure/WebsiteStructure";
 import ImageLibrary from "@/components/images/ImageLibrary";
 import NavbarConfigurator from "@/components/configuration/NavbarConfigurator";
+import ContactConfigurator from "@/components/configuration/ContactConfigurator";
+import FooterConfigurator from "@/components/configuration/FooterConfigurator";
 import HeroConfigurator from "@/components/configuration/HeroConfigurator";
 import ConfigurationHome from "@/components/configuration/ConfigurationHome";
 import ServicesConfigurator from "@/components/configuration/ServicesConfigurator";
@@ -14,6 +17,8 @@ import PortfolioConfigurator from "@/components/configuration/PortfolioConfigura
 import FAQConfigurator from "@/components/configuration/FAQConfigurator";
 import TestimonialsConfigurator from "@/components/configuration/TestimonialsConfigurator";
 import AboutMeConfigurator from "@/components/configuration/AboutMeConfigurator";
+import WebsitePreview from "@/components/preview/WebsitePreview";
+import ExportPage from "@/components/export/ExportPage";
 import ProjectSetup, {
   type ProjectFormData,
 } from "@/components/project/ProjectSetup";
@@ -48,6 +53,9 @@ export default function Home() {
       "Website Structure",
       "Configuration", "Navbar", "Hero", "Services",
       "Image Library",
+      "Preview",
+    "Export",
+    "Settings",
     ];
 
     if (savedSection && allowedSections.includes(savedSection)) {
@@ -58,9 +66,14 @@ export default function Home() {
   }, []);
 
   function navigate(section: string) {
-    setActiveSection(section);
     setSidebarOpen(false);
-    if (section === "Configuration") setActiveConfigurationSection(null);
+
+      setActiveSection(section);
+
+    if (section === "Configuration") {
+      setActiveConfigurationSection(null);
+    }
+
     localStorage.setItem("maximus-active-section", section);
   }
 
@@ -104,7 +117,14 @@ export default function Home() {
               {activeSection}
             </h1>
           </div>
-        </header>
+        
+          <div className="ml-auto flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+            <span className="shrink-0 text-slate-400">Project Aktif:</span>
+            <span className="max-w-[180px] truncate font-semibold text-white">
+              {formData?.businessName || formData?.projectName || "Belum ada proyek"}
+            </span>
+          </div>
+</header>
 
         <div className="mx-auto max-w-[1450px] p-4 sm:p-8 lg:p-10">
           {ready && activeSection === "Projects" && (
@@ -203,6 +223,36 @@ export default function Home() {
                 <NavbarConfigurator
                   key={`navbar-${formData.id}`}
                   projectId={formData.id}
+                />
+              </div>
+             ) : activeConfigurationSection.toLowerCase().includes("contact") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Kembali ke Configuration
+                </button>
+                <ContactConfigurator
+                  key={`contact-${formData.id}`}
+                  projectId={formData.id}
+                />
+              </div>
+            ) : activeConfigurationSection.toLowerCase().includes("footer") ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigurationSection(null)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  ← Back to Configuration
+                </button>
+                <FooterConfigurator
+                  key={`footer-${formData.id}`}
+                  projectId={formData.id}
+                  primaryColor={formData.primaryColor}
+                  secondaryColor={formData.secondaryColor}
                 />
               </div>
             ) : activeConfigurationSection.toLowerCase().includes("hero") ? (
@@ -366,7 +416,24 @@ export default function Home() {
             </div>
           )}
 
-          {activeSection === "Project Details" && formData && (
+          {ready && activeSection === "Settings" && (
+            <SettingsPage />
+          )}
+
+          {ready && activeSection === "Preview" && (
+        <WebsitePreview
+          key={formData?.id || "no-project"}
+          projectId={formData?.id || ""}
+          projectName={formData?.projectName || "Website Preview"}
+          primaryColor={formData?.primaryColor}
+          secondaryColor={formData?.secondaryColor}
+          onBack={() => navigate("Website Structure")}
+        />
+      )}
+
+      {ready && activeSection === "Export" && <ExportPage />}
+
+      {activeSection === "Project Details" && formData && (
             <section className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">
                 Project Setup / Submitted

@@ -47,3 +47,171 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+/* MAXIMUS_THEME_TOKENS_V1 */
+:root {
+  color-scheme: light;
+  --mx-accent: #3867ff;
+  --mx-accent-strong: #304fe8;
+  --mx-shell-bg: #f1f5f9;
+  --mx-surface: #ffffff;
+  --mx-text: #172033;
+  --mx-muted: #718096;
+  --mx-border: #dfe5ee;
+  --mx-sidebar-bg: #06142f;
+  --mx-sidebar-text: #a9b7d0;
+  --mx-sidebar-muted: #7183a2;
+}
+
+html[data-maximus-accent="orange"] {
+  --mx-accent: #f59e0b;
+  --mx-accent-strong: #d97706;
+}
+html[data-maximus-accent="emerald"] {
+  --mx-accent: #10b981;
+  --mx-accent-strong: #059669;
+}
+html[data-maximus-accent="violet"] {
+  --mx-accent: #8b5cf6;
+  --mx-accent-strong: #7c3aed;
+}
+html[data-maximus-accent="lightblue"] {
+  --mx-accent: #3867ff;
+  --mx-accent-strong: #304fe8;
+}
+html[data-maximus-accent="lightemerald"] {
+  --mx-accent: #059669;
+  --mx-accent-strong: #047857;
+}
+
+html[data-maximus-mode="dark"] {
+  color-scheme: dark;
+  --mx-shell-bg: #0b1220;
+  --mx-surface: #131e30;
+  --mx-text: #e2e8f0;
+  --mx-muted: #9aa9bd;
+  --mx-border: #29364a;
+  --mx-sidebar-bg: #07152f;
+  --mx-sidebar-text: #a9b7d0;
+  --mx-sidebar-muted: #7183a2;
+}
+
+html[data-maximus-mode="light"] {
+  color-scheme: light;
+  --mx-shell-bg: #f1f5f9;
+  --mx-surface: #ffffff;
+  --mx-text: #172033;
+  --mx-muted: #718096;
+  --mx-border: #dfe5ee;
+  --mx-sidebar-bg: #f8fafc;
+  --mx-sidebar-text: #263449;
+  --mx-sidebar-muted: #526078;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-maximus-mode="system"] {
+    color-scheme: dark;
+    --mx-shell-bg: #0b1220;
+    --mx-surface: #131e30;
+    --mx-text: #e2e8f0;
+    --mx-muted: #9aa9bd;
+    --mx-border: #29364a;
+    --mx-sidebar-bg: #07152f;
+    --mx-sidebar-text: #a9b7d0;
+    --mx-sidebar-muted: #7183a2;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-maximus-mode="system"] {
+    color-scheme: light;
+    --mx-shell-bg: #f1f5f9;
+    --mx-surface: #ffffff;
+    --mx-text: #172033;
+    --mx-muted: #718096;
+    --mx-border: #dfe5ee;
+    --mx-sidebar-bg: #f8fafc;
+    --mx-sidebar-text: #263449;
+    --mx-sidebar-muted: #526078;
+  }
+}
+
+/* Main application shell */
+body > main {
+  background-color: var(--mx-shell-bg);
+}
+
+/* Sidebar: preserve its existing layout and spacing */
+aside {
+  background-color: var(--mx-sidebar-bg) !important;
+  color: var(--mx-sidebar-text);
+  border-color: var(--mx-border) !important;
+}
+
+aside .text-slate-200,
+aside .text-slate-300 {
+  color: var(--mx-sidebar-text) !important;
+}
+
+aside .text-slate-400,
+aside .text-slate-500 {
+  color: var(--mx-sidebar-muted) !important;
+}
+
+aside [aria-current="page"] {
+  background: linear-gradient(
+    110deg,
+    var(--mx-accent),
+    var(--mx-accent-strong)
+  ) !important;
+  color: #ffffff !important;
+}
+
+aside [aria-current="page"] span {
+  color: #ffffff !important;
+}
+
+/* Settings cards only: do not recolor generated website previews */
+[data-maximus-settings] .bg-white {
+  background-color: var(--mx-surface) !important;
+}
+
+[data-maximus-settings] .text-slate-900,
+[data-maximus-settings] .text-slate-800,
+[data-maximus-settings] .text-slate-700 {
+  color: var(--mx-text) !important;
+}
+
+[data-maximus-settings] .text-slate-600,
+[data-maximus-settings] .text-slate-500 {
+  color: var(--mx-muted) !important;
+}
+
+[data-maximus-settings] .border-slate-200,
+[data-maximus-settings] .border-slate-300 {
+  border-color: var(--mx-border) !important;
+}
+
+[data-maximus-settings] .bg-indigo-50 {
+  background-color: color-mix(in srgb, var(--mx-accent) 10%, var(--mx-surface)) !important;
+}
+
+[data-maximus-settings] .text-indigo-700,
+[data-maximus-settings] .text-indigo-600,
+[data-maximus-settings] .text-indigo-500 {
+  color: var(--mx-accent-strong) !important;
+}
+
+[data-maximus-settings] .border-indigo-500 {
+  border-color: var(--mx-accent) !important;
+}
+
+[data-maximus-settings] .bg-indigo-600 {
+  background-color: var(--mx-accent) !important;
+}
+
+[data-maximus-settings] .hover\:bg-indigo-700:hover {
+  background-color: var(--mx-accent-strong) !important;
+}
+

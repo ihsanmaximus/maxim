@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getProjectData,
   saveProjectData,
 } from "@/lib/projects/projectStorage";
+import {
+  getProjectImages,
+  saveProjectImages,
+  type StoredImage,
+} from "@/lib/projects/imageStorage";
 
 type ServiceItem = {
   id: string;
   image: string;
+  imageId?: string;
   title: string;
   description: string;
 };
@@ -18,6 +24,7 @@ type ServicesConfig = {
   title: string;
   description: string;
   items: ServiceItem[];
+  displayMode: "cards" | "carousel";
   desktopColumns: 2 | 3 | 4;
   mobileColumns: 1 | 2;
   visualType: "image" | "icon";
@@ -33,6 +40,7 @@ type ServicesConfig = {
   ribbonButton: string;
   ribbonBackground: string;
   ribbonImage: string;
+  ribbonImageId?: string;
   paddingTop: number;
   paddingBottom: number;
   cardGap: number;
@@ -80,6 +88,7 @@ function makeDefaults(
     description:
       "Kami menyediakan berbagai layanan profesional untuk mewujudkan rumah impian Anda, dari desain hingga pembangunan.",
     items: defaultItems.map((item) => ({ ...item })),
+    displayMode: "cards",
     desktopColumns: 3,
     mobileColumns: 1,
     visualType: "image",
@@ -377,6 +386,114 @@ function MobileServicesSlider({ config }: { config: ServicesConfig }) {
   );
 }
 
+
+function ImageUpload({
+  projectId,
+  label,
+  value,
+  legacyValue,
+  onChange,
+  onLegacyChange,
+}: {
+  projectId: string;
+  label: string;
+  value?: string;
+  legacyValue: string;
+  onChange: (imageId: string) => void;
+  onLegacyChange: (value: string) => void;
+}) {
+  const [images, setImages] = useState<StoredImage[]>([]);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const selected = images.find((image) => image.id === value);
+
+  useEffect(() => {
+    let cancelled = false;
+    getProjectImages(projectId)
+      .then((saved) => { if (!cancelled) setImages(saved); })
+      .catch((error) => console.error("Gagal memuat Image Library:", error));
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  async function uploadFile(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Pilih file gambar.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert("Ukuran gambar maksimal 8 MB.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Gagal membaca gambar."));
+        reader.onerror = () => reject(new Error("Gagal membaca gambar."));
+        reader.readAsDataURL(file);
+      });
+      const current = await getProjectImages(projectId);
+      const image: StoredImage = {
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl,
+        createdAt: new Date().toISOString(),
+      };
+      const next = [...current, image];
+      await saveProjectImages(projectId, next);
+      setImages(next);
+      onLegacyChange("");
+      onChange(image.id);
+      setShowLibrary(true);
+    } catch (error) {
+      console.error("Gagal mengunggah gambar:", error);
+      alert("Gambar gagal disimpan ke Image Library. Coba gambar yang lebih kecil.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const previewSrc = selected?.dataUrl || legacyValue;
+
+  return (
+    <div className="space-y-3">
+      <p className="block text-sm font-medium text-slate-700">{label}</p>
+      {previewSrc ? (
+        <img src={previewSrc} alt="Preview gambar" className="h-32 w-full rounded-lg object-cover" />
+      ) : (
+        <div className="grid h-28 place-items-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500">Belum ada gambar dipilih</div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setShowLibrary((open) => !open)} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
+          {showLibrary ? "Tutup Galeri" : "Pilih dari Image Library"}
+        </button>
+        <label className={`cursor-pointer rounded-lg bg-slate-800 px-3 py-2.5 text-center text-xs font-semibold text-white hover:bg-slate-700 ${busy ? "pointer-events-none opacity-60" : ""}`}>
+          {busy ? "Mengunggah…" : "＋ Upload Gambar"}
+          <input type="file" accept="image/*" className="hidden" disabled={busy} onChange={(event) => { void uploadFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />
+        </label>
+      </div>
+      {showLibrary && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          {images.length ? (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {images.map((image) => (
+                <button key={image.id} type="button" onClick={() => { onChange(image.id); onLegacyChange(""); setShowLibrary(false); }} aria-pressed={value === image.id} title={image.name} className={`overflow-hidden rounded-lg border-2 bg-white text-left ${value === image.id ? "border-emerald-600 ring-2 ring-emerald-100" : "border-transparent hover:border-slate-300"}`}>
+                  <img src={image.dataUrl} alt={image.name} className="h-20 w-full object-cover" />
+                  <span className="block truncate px-1.5 py-1 text-[10px] text-slate-600">{image.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : <p className="text-xs text-slate-500">Image Library masih kosong. Upload gambar untuk menambahkannya.</p>}
+        </div>
+      )}
+      {(value || legacyValue) && <button type="button" className="text-xs font-medium text-red-600 hover:underline" onClick={() => { onChange(""); onLegacyChange(""); }}>Hapus gambar</button>}
+    </div>
+  );
+}
+
 export default function ServicesConfigurator({
   projectId,
   primaryColor = "#14532D",
@@ -393,22 +510,49 @@ export default function ServicesConfigurator({
   const [saveStatus, setSaveStatus] = useState("Memuat konfigurasi...");
 
   useEffect(() => {
+    let cancelled = false;
     const fallback = makeDefaults(primaryColor, secondaryColor);
 
-    try {
-      const saved = getProjectData<ServicesConfig | null>(
-        projectId,
-        "services-config",
-        null,
-      );
-
-      setConfig(saved ? { ...fallback, ...saved } : fallback);
-    } catch (error) {
-      console.error("Gagal memuat Services Configurator:", error);
-      setConfig(fallback);
-    } finally {
-      setLoaded(true);
+    async function loadConfig() {
+      try {
+        const saved = getProjectData<ServicesConfig | null>(projectId, "services-config", null);
+        const next: ServicesConfig = saved ? { ...fallback, ...saved } : fallback;
+        // Migrate legacy Base64 images out of localStorage into IndexedDB.
+        const images = await getProjectImages(projectId);
+        let updatedImages = [...images];
+        const migrate = (dataUrl: string, name: string) => {
+          if (!dataUrl.startsWith("data:image/")) return "";
+          const existing = updatedImages.find((image) => image.dataUrl === dataUrl);
+          if (existing) return existing.id;
+          const match = dataUrl.match(/^data:(image\/[^;]+);base64,(.*)$/);
+          const byteLength = match ? Math.floor(match[2].length * 3 / 4) : 0;
+          const image: StoredImage = { id: `img-migrated-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name, type: match?.[1] || "image/png", size: byteLength, dataUrl, createdAt: new Date().toISOString() };
+          updatedImages.push(image);
+          return image.id;
+        };
+        next.items = (Array.isArray(next.items) ? next.items : []).map((item, index) => {
+          if (!item.imageId && item.image?.startsWith("data:image/")) {
+            const imageId = migrate(item.image, `service-${index + 1}`);
+            return { ...item, image: "", imageId };
+          }
+          return item;
+        });
+        if (!next.ribbonImageId && next.ribbonImage?.startsWith("data:image/")) {
+          next.ribbonImageId = migrate(next.ribbonImage, "service-ribbon");
+          next.ribbonImage = "";
+        }
+        if (updatedImages.length !== images.length) await saveProjectImages(projectId, updatedImages);
+        if (!cancelled) setConfig(next);
+      } catch (error) {
+        console.error("Gagal memuat Services Configurator:", error);
+        if (!cancelled) setConfig(fallback);
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
     }
+    setLoaded(false);
+    void loadConfig();
+    return () => { cancelled = true; };
   }, [projectId, primaryColor, secondaryColor]);
 
   useEffect(() => {
@@ -453,6 +597,7 @@ export default function ServicesConfigurator({
         {
           id,
           image: "",
+          imageId: undefined,
           title: `Layanan ${current.items.length + 1}`,
           description: "",
         },
@@ -470,6 +615,22 @@ export default function ServicesConfigurator({
 
     if (editingId === id) setEditingId(null);
   }
+
+  const [libraryImages, setLibraryImages] = useState<StoredImage[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    getProjectImages(projectId).then((images) => { if (!cancelled) setLibraryImages(images); }).catch((error) => console.error("Gagal memuat gambar preview:", error));
+    return () => { cancelled = true; };
+  }, [projectId, config]);
+
+  const previewConfig = useMemo<ServicesConfig>(() => ({
+    ...config,
+    items: config.items.map((item) => ({
+      ...item,
+      image: item.imageId ? (libraryImages.find((image) => image.id === item.imageId)?.dataUrl || "") : item.image,
+    })),
+    ribbonImage: config.ribbonImageId ? (libraryImages.find((image) => image.id === config.ribbonImageId)?.dataUrl || "") : config.ribbonImage,
+  }), [config, libraryImages]);
 
   const previewWidth =
     previewDevice === "mobile" ? "max-w-[390px]" : "max-w-full";
@@ -594,13 +755,13 @@ export default function ServicesConfigurator({
                         multiline
                       />
 
-                      <Field
-                        label="URL gambar"
-                        value={item.image}
-                        onChange={(value) =>
-                          updateItem(item.id, "image", value)
-                        }
-                        placeholder="https://..."
+                      <ImageUpload
+                        projectId={projectId}
+                        label="Gambar layanan"
+                        value={item.imageId}
+                        legacyValue={item.image}
+                        onChange={(imageId) => updateItem(item.id, "imageId", imageId)}
+                        onLegacyChange={(image) => updateItem(item.id, "image", image)}
                       />
                     </div>
                   )}
@@ -618,6 +779,31 @@ export default function ServicesConfigurator({
           </Accordion>
 
           <Accordion number="03" title="Layout & Gambar">
+            <div>
+              <label className={labelClass}>Tampilan layanan</label>
+              <p className="mb-2 text-xs text-slate-500">Pilih kartu grid atau carousel seperti Testimonials.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "cards", label: "Grid Cards", help: "Kartu dalam beberapa kolom." },
+                  { value: "carousel", label: "Carousel", help: "Kartu digeser secara horizontal." },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => updateConfig("displayMode", option.value as "cards" | "carousel")}
+                    className={`rounded-xl border p-3 text-left transition ${
+                      config.displayMode === option.value
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                        : "border-slate-200 bg-white text-slate-700"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold">{option.label}</span>
+                    <span className="mt-1 block text-xs font-normal opacity-75">{option.help}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {config.displayMode === "cards" && <>
             <div>
               <label className={labelClass}>Kolom desktop</label>
               <div className="grid grid-cols-3 gap-2">
@@ -710,6 +896,7 @@ export default function ServicesConfigurator({
                 ))}
               </div>
             </div>
+            </>}
           </Accordion>
 
           <Accordion number="04" title="Warna & Jarak">
@@ -837,11 +1024,13 @@ export default function ServicesConfigurator({
               }
             />
 
-            <Field
-              label="URL gambar ribbon (opsional)"
-              value={config.ribbonImage}
-              onChange={(value) => updateConfig("ribbonImage", value)}
-              placeholder="https://..."
+            <ImageUpload
+              projectId={projectId}
+              label="Gambar ribbon"
+              value={config.ribbonImageId}
+              legacyValue={config.ribbonImage}
+              onChange={(imageId) => updateConfig("ribbonImageId", imageId)}
+              onLegacyChange={(image) => updateConfig("ribbonImage", image)}
             />
           </Accordion>
         </div>
@@ -921,9 +1110,9 @@ export default function ServicesConfigurator({
                   )}
 
                   {previewDevice === "mobile" ? (
-                    <MobileServicesSlider config={config} />
+                    <MobileServicesSlider config={previewConfig} />
                   ) : (
-                    <DesktopServicesGrid config={config} />
+                    <DesktopServicesGrid config={previewConfig} />
                   )}
 
                   {config.ribbonEnabled && (
@@ -933,15 +1122,15 @@ export default function ServicesConfigurator({
                         backgroundColor: config.ribbonBackground,
                       }}
                     >
-                      {config.ribbonImage && (
+                      {previewConfig.ribbonImage && (
                         <img
-                          src={config.ribbonImage}
+                          src={previewConfig.ribbonImage}
                           alt=""
                           className="absolute inset-0 h-full w-full object-cover"
                         />
                       )}
 
-                      {config.ribbonImage && (
+                      {previewConfig.ribbonImage && (
                         <div className="absolute inset-0 bg-black/45" />
                       )}
 
