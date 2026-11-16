@@ -5,30 +5,26 @@ type SidebarProps = {
   onNavigate: (section: string) => void;
   isOpen: boolean;
   onClose: () => void;
+  activeConfigurationSection: string | null;
 };
 
+const sectionItems = [
+  { name: "Navbar", icon: "sliders" },
+  { name: "Hero", icon: "sliders" },
+  { name: "About", icon: "about" },
+  { name: "Experience", icon: "layers" },
+  { name: "Benefit", icon: "layers" },
+  { name: "Services", icon: "layers" },
+  { name: "Portfolio", icon: "image" },
+  { name: "Testimonials", icon: "about" },
+  { name: "FAQ & CTA", icon: "sliders" },
+  { name: "Footer", icon: "document" },
+];
+
 const menuGroups = [
-  {
-    title: "WORKSPACE",
-    items: [{ name: "Dashboard", icon: "dashboard" }],
-  },
-  {
-    title: "WEBSITE BUILDER",
-    items: [
-      { name: "Project Setup", icon: "document" },
-      { name: "Website Structure", icon: "layers" },
-      { name: "Configuration", icon: "sliders" },
-      { name: "Preview", icon: "eye" },
-      { name: "Export", icon: "export" },
-    ],
-  },
-  {
-    title: "UTILITIES",
-    items: [
-      { name: "Image Library", icon: "image" },
-      { name: "Projects", icon: "folder" },
-    ],
-  },
+  { title: "WEBSITE", items: [{ name: "General Setup", icon: "document" }, { name: "Website Structure", icon: "layers" }] },
+  { title: "CONFIGURATOR", items: [] },
+  { title: "PUBLISHING", items: [{ name: "SEO", icon: "settings" }] },
 ];
 
 function MenuIcon({ name }: { name: string }) {
@@ -172,6 +168,7 @@ export default function Sidebar({
   onNavigate,
   isOpen,
   onClose,
+  activeConfigurationSection,
 }: SidebarProps) {
   const renderMenuItem = (item: { name: string; icon: string }) => {
     const active = activeSection === item.name;
@@ -251,49 +248,13 @@ export default function Sidebar({
                 {group.title}
               </div>
               <div className="flex flex-col gap-1">
-                {group.items.map(renderMenuItem)}
+                {group.title === "CONFIGURATOR" ? <div className="flex flex-col gap-1">{sectionItems.map((item) => { const active = activeSection === "Configuration" && activeConfigurationSection === item.name; return <button key={item.name} type="button" onClick={() => { onNavigate("Configuration:" + item.name); onClose(); }} aria-current={active ? "page" : undefined} className={"ml-4 flex w-[calc(100%-1rem)] items-center gap-3 rounded-xl border-l border-white/10 px-4 py-2.5 text-left text-sm transition-colors duration-200 " + (active ? "bg-gradient-to-r from-blue-600 to-indigo-600 font-semibold text-white shadow-sm" : "text-slate-300/85 hover:bg-white/[0.06] hover:text-slate-100")}><span className="grid w-5 shrink-0 place-items-center"><MenuIcon name={item.icon} /></span><span>{item.name}</span></button>; })}</div> : <div className="flex flex-col gap-1">{group.items.map(renderMenuItem)}</div>}
               </div>
             </div>
           ))}
         </nav>
 
-        {/* Bottom area stays below the main navigation; no divider above Settings */}
-        <div className="shrink-0 px-3 pb-4 pt-5">
-          <div className="flex flex-col gap-1">
-            {renderMenuItem({ name: "Settings", icon: "settings" })}
-            {renderMenuItem({ name: "About", icon: "about" })}
-          </div>
-
-          <div className="my-4 border-t border-white/20" />
-
-          <div className="flex items-center gap-3 px-2 py-2">
-            <img
-              src="/images/profile-kang-ihsan.jpg"
-              alt="Foto profil"
-              className="h-10 w-10 shrink-0 rounded-full border border-white/10 object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-100">
-                Kang Ihsan
-              </p>
-              <p className="mt-0.5 truncate text-xs text-slate-400">
-                Workspace Owner
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            disabled
-            title="Logout belum tersedia"
-            className="mt-2 flex w-full cursor-not-allowed items-center gap-3 rounded-xl bg-white/[0.045] px-4 py-3 text-left text-sm text-slate-400/90"
-          >
-            <span className="grid w-6 shrink-0 place-items-center">
-              <MenuIcon name="logout" />
-            </span>
-            Logout
-          </button>
-        </div>
+        <div className="shrink-0 border-t border-white/[0.08] px-5 py-5"><p className="text-xs text-slate-400">MAXIMUS · WEBSITE WORKSPACE</p></div>
       </aside>
     </>
   );
