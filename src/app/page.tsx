@@ -225,6 +225,12 @@ export default function Home() {
                   projectId={formData.id}
                 />
               </div>
+             ) : activeConfigurationSection.toLowerCase().includes("faq & cta") ? (
+              <div className="space-y-6">
+                <button type="button" onClick={() => setActiveConfigurationSection(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">← Kembali ke Configurator</button>
+                <FAQConfigurator key={`faq-${formData.id}`} projectId={formData.id} primaryColor={formData.primaryColor} secondaryColor={formData.secondaryColor} />
+                <ContactConfigurator key={`contact-${formData.id}`} projectId={formData.id} />
+              </div>
              ) : activeConfigurationSection.toLowerCase().includes("contact") ? (
               <div className="space-y-4">
                 <button
@@ -387,6 +393,14 @@ export default function Home() {
                 Back to Dashboard
               </button>
             </div>
+          )}
+
+          {ready && activeSection === "SEO" && (
+            <section className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">Website Builder</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">SEO</h2>
+              <p className="mt-2 text-sm text-slate-600">Halaman SEO disiapkan sebagai menu utama. Field dan penyimpanan SEO belum diubah pada tahap ini.</p>
+            </section>
           )}
 
           {ready && activeSection === "Image Library" && (
