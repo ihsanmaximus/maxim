@@ -31,7 +31,7 @@ import {
 } from "@/lib/projects/projectStorage";
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState("Dashboard");
+  const [activeSection, setActiveSection] = useState("Project Setup");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState<StoredProject | null>(null);
   const [ready, setReady] = useState(false);
@@ -45,35 +45,27 @@ export default function Home() {
     }
 
     const savedSection = localStorage.getItem("maximus-active-section");
-    const allowedSections = [
-      "Dashboard",
-      "Projects",
-      "Project Setup",
-      "Project Details",
-      "Website Structure",
-      "Configuration", "Navbar", "Hero", "Services",
-      "Image Library",
-      "Preview",
-    "Export",
-    "Settings",
-    ];
+    const allowedSections = ["Project Setup", "Website Structure", "Configuration", "SEO"];
 
-    if (savedSection && allowedSections.includes(savedSection)) {
-      setActiveSection(savedSection);
-    }
+    if (savedSection && allowedSections.includes(savedSection)) setActiveSection(savedSection);
+    const savedConfigSection = localStorage.getItem("maximus-active-configuration-section");
+    if (savedConfigSection) setActiveConfigurationSection(savedConfigSection);
 
     setReady(true);
   }, []);
 
   function navigate(section: string) {
     setSidebarOpen(false);
-
-      setActiveSection(section);
-
-    if (section === "Configuration") {
-      setActiveConfigurationSection(null);
+    if (section.startsWith("Configuration:")) {
+      const child = section.slice("Configuration:".length);
+      setActiveSection("Configuration");
+      setActiveConfigurationSection(child);
+      localStorage.setItem("maximus-active-section", "Configuration");
+      localStorage.setItem("maximus-active-configuration-section", child);
+      return;
     }
-
+    setActiveSection(section);
+    if (section === "Configuration") setActiveConfigurationSection(null);
     localStorage.setItem("maximus-active-section", section);
   }
 
@@ -96,6 +88,7 @@ export default function Home() {
         onNavigate={navigate}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        activeConfigurationSection={activeConfigurationSection}
       />
 
       <section className="min-w-0">
@@ -114,7 +107,7 @@ export default function Home() {
               MAXIM / WORKSPACE
             </p>
             <h1 className="mt-1 text-xl font-bold text-white">
-              {activeSection}
+              {activeSection === "Project Setup" ? "General Setup" : activeSection === "Configuration" ? activeConfigurationSection || "Configurator" : activeSection}
             </h1>
           </div>
         
