@@ -178,7 +178,7 @@ export default function Sidebar({
         key={item.name}
         type="button"
         onClick={() => {
-          onNavigate(item.name);
+          onNavigate(item.name === "General Setup" ? "Project Setup" : item.name);
           onClose();
         }}
         aria-current={active ? "page" : undefined}
